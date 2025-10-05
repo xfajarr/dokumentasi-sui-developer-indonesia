@@ -1,0 +1,154 @@
+/**
+ * Global theme overrides using Sui color palette
+ * and Indonesian-friendly typography.
+ */
+
+/* Jakarta Sans for modern Indonesian docs UI */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+/* Brand variables */
+:root {
+  --ifm-font-family-base: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --ifm-heading-font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial;
+
+  /* Sui blues (light mode) */
+  --ifm-color-primary: #4DA2FF;
+  --ifm-color-primary-dark: #3A8BE0;
+  --ifm-color-primary-darker: #1C74C9;
+  --ifm-color-primary-darkest: #0E3E70;
+  --ifm-color-primary-light: #79B9FF;
+  --ifm-color-primary-lighter: #C0E6FF;
+  --ifm-color-primary-lightest: #E6F3FF;
+}
+
+/* Dark theme tuned for Sui palette */
+[data-theme='dark'] {
+  /* Sui palette tuned for dark mode */
+  --ifm-color-primary: #4DA2FF;
+  --ifm-color-primary-dark: #79B9FF;
+  --ifm-color-primary-darker: #9AC7FF;
+  --ifm-color-primary-darkest: #C0E6FF;
+  --ifm-color-primary-light: #1C74C9;
+  --ifm-color-primary-lighter: #0E3E70;
+  --ifm-color-primary-lightest: #011829;
+  --docusaurus-highlighted-code-line-bg: rgba(77, 162, 255, 0.22);
+}
+
+/* Navbar styles aligned with Sui palette */
+.navbar {
+  background: var(--ifm-color-primary);
+}
+
+/* Dark theme navbar harmonized with Sui palette */
+[data-theme='dark'] .navbar {
+  background: linear-gradient(135deg, var(--ifm-color-primary-lightest) 0%, var(--ifm-color-primary-lighter) 60%, var(--ifm-color-primary-light) 100%);
+}
+
+/* Active page link color in navbar */
+.navbar__link--active {
+  color: var(--ifm-color-lightest) !important;
+}
+
+/* Hover/focus/active states - enforce white for clarity */
+.navbar__link:hover,
+.navbar__link:focus-visible,
+.navbar__link--active,
+.navbar__brand:hover,
+.navbar__brand:focus-visible,
+.navbar .navbar__item.dropdown:hover > .navbar__link,
+.navbar .navbar__item.dropdown:focus-within > .navbar__link {
+  color: var(--ifm-color-lightest) !important;
+}
+
+.navbar__link:hover svg,
+.navbar__brand:hover svg {
+  fill: var(--ifm-color-lightest);
+}
+
+/* Mobile menu link hover */
+.menu__link:hover {
+  color: var(--ifm-color-lightest);
+}
+
+/* Footer harmonizes with navbar gradient */
+.footer--dark {
+  /* Darker background for better contrast in light mode too */
+  background: linear-gradient(135deg, var(--ifm-color-primary-darkest) 0%, var(--ifm-color-primary-darker) 100%);
+  color: #FFFFFF;
+}
+
+/* Footer link colors for contrast */
+.footer--dark a {
+  color: #FFFFFF;
+}
+
+.footer--dark a:hover {
+  color: var(--ifm-color-primary-lighter);
+}
+
+/* Primary CTA: clean and high-contrast for Indonesian readers */
+.hero .button.button--secondary {
+  background-color: #FFFFFF;
+  color: var(--ifm-color-primary-darkest);
+  border: 1px solid var(--ifm-color-primary-light);
+  box-shadow: 0 2px 8px rgba(77, 162, 255, 0.20);
+}
+
+.hero .button.button--secondary:hover {
+  background-color: var(--ifm-color-primary-lightest);
+  color: var(--ifm-color-primary-darkest);
+  border-color: var(--ifm-color-primary);
+}
+
+/* Slightly thicker link underline for readability */
+a {
+  text-decoration-thickness: 0.08em;
+}
+
+/* Sidebar color overrides */
+/* Light theme: set sidebar text to #030F1C as requested */
+html:not([data-theme='dark']) .theme-doc-sidebar-menu .menu__link,
+[data-theme='light'] .theme-doc-sidebar-menu .menu__link {
+  color: #030F1C !important;
+}
+
+/* Keep hover aligned with Sui palette, not white */
+html:not([data-theme='dark']) .theme-doc-sidebar-menu .menu__link:hover,
+[data-theme='light'] .theme-doc-sidebar-menu .menu__link:hover {
+  color: var(--ifm-color-primary-dark) !important;
+}
+/* Unified sidebar styles for light and dark modes with slightly bold text */
+html:not([data-theme='dark']) .theme-doc-sidebar-menu .menu__link,
+[data-theme='light'] .theme-doc-sidebar-menu .menu__link {
+  color: #030F1C !important;
+  font-weight: 600;
+}
+
+html:not([data-theme='dark']) .theme-doc-sidebar-menu .menu__link:hover,
+[data-theme='light'] .theme-doc-sidebar-menu .menu__link:hover {
+  color: var(--ifm-color-primary-dark) !important;
+  font-weight: 600;
+}
+
+html:not([data-theme='dark']) .theme-doc-sidebar-menu .menu__link--active,
+[data-theme='light'] .theme-doc-sidebar-menu .menu__link--active {
+  color: var(--ifm-color-primary) !important;
+  font-weight: 600;
+}
+
+/* Dark mode sidebar: readable and consistent, slightly bold */
+[data-theme='dark'] .theme-doc-sidebar-menu .menu__link {
+  /* Use a lighter cyan for visibility on dark bg */
+  color: var(--ifm-color-primary-darkest);
+  font-weight: 600;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-menu .menu__link:hover {
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-menu .menu__link--active {
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}

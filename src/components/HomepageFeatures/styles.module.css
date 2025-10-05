@@ -1,0 +1,47 @@
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2.5rem 0;
+  width: 100%;
+
+  /* Sui-inspired soft gradient background */
+  background:
+    radial-gradient(900px 600px at 15% 0%, rgba(77, 162, 255, 0.10) 0%, rgba(77, 162, 255, 0.00) 65%),
+    radial-gradient(700px 500px at 85% 20%, rgba(1, 24, 41, 0.06) 0%, rgba(1, 24, 41, 0.00) 70%);
+}
+
+.featureSvg {
+  height: 200px;
+  width: 200px;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 4px 12px rgba(77, 162, 255, 0.18));
+}
+
+/* Card styling within features section */
+.features :global(.card) {
+  border: 1px solid rgba(77, 162, 255, 0.18);
+  background: var(--ifm-background-surface-color, #ffffff);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.features :global(.card:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(77, 162, 255, 0.20);
+  border-color: rgba(77, 162, 255, 0.30);
+}
+
+/* Column spacing on small screens */
+.features :global(.col) {
+  margin-bottom: 1rem;
+}
+
+/* Dark theme adjustments */
+:global([data-theme='dark']) .features :global(.card) {
+  background: #0A1B2B;
+  border-color: rgba(192, 230, 255, 0.18);
+}
+
+:global([data-theme='dark']) .features :global(.card:hover) {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  border-color: rgba(192, 230, 255, 0.28);
+}

@@ -1,0 +1,56 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 480px;
+
+  /* Sui-inspired accent with logo watermark */
+  background:
+    radial-gradient(1000px 600px at 20% 0%, rgba(77, 162, 255, 0.18) 0%, rgba(77, 162, 255, 0.00) 65%);
+  backdrop-filter: saturate(120%);
+}
+
+/* Watermark Sui logo replacing dark blur */
+.heroBanner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/img/Sui_Symbol_Sea.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 720px;
+  z-index: 0;
+  opacity: 0.08;
+  pointer-events: none;
+  transform: translateZ(0);
+  backdrop-filter: saturate(120%);
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Sui brand color for hero title and subtitle */
+.heroBanner :global(.hero__title) {
+  color: var(--ifm-color-primary);
+}
+
+.heroBanner :global(.hero__subtitle) {
+  color: var(--ifm-color-primary);
+}
