@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Pengenalan Blockchain & Smart Contract
+title: "Sesi 1: Pengenalan Blockchain & Smart Contract"
 description: Workshop komprehensif untuk menguasai Sui blockchain development.
 keywords: [sui, blockchain, move, smart contract, workshop, indonesia, web3, cryptocurrency, development]
 ---

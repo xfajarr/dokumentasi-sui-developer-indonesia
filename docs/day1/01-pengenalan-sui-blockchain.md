@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Pengenalan Sui Blockchain
+title: "Sesi 2: Pengenalan Sui Blockchain"
 description: Pengantar konsep inti Sui blockchain.
 keywords: [sui, blockchain, fundamental, indonesia]
 ---
