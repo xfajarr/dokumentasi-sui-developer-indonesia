@@ -135,7 +135,7 @@ Untuk dokumentasi lengkap tentang instalasi Sui, kunjungi: [https://docs.sui.io/
 
 ---
 
-## Konfigurasi Sui Client
+## Konfigurasi Sui Client {#konfigurasi-sui-client}
 
 Konfigurasi Sui client menentukan jaringan mana yang akan digunakan dan alamat mana yang akan digunakan untuk mengirim transaksi.
 
@@ -258,7 +258,7 @@ File ini berisi:
 
 Setelah Sui CLI terinstal dan dikonfigurasi, langkah selanjutnya adalah:
 
-1. **[Setup Wallet & Mendapatkan SUI dari Faucet](/docs/setup/02-setup-wallet-dan-faucet)**: Membuat wallet dan mendapatkan token SUI untuk transaksi
+1. **[Setup Wallet & Mendapatkan SUI dari Faucet](setup-wallet-dan-faucet)**: Membuat wallet dan mendapatkan token SUI untuk transaksi
 2. **Membuat Smart Contract**: Mulai membangun smart contract Move pertama Kamu
 3. **Deploy Package**: Deploy smart contract ke Testnet
 

@@ -28,7 +28,7 @@ Address dihasilkan dari fungsi hash kriptografi yang membuat public key. Setiap 
 ## Membuat Address Sui
 
 :::warning
-Jika Kamu sudah memiliki address atau sudah membuat address baru saat [Mengkonfigurasi Sui Client](/docs/setup/01-setup-lingkungan-development#konfigurasi-sui-client), Kamu bisa langsung skip ke bagian [Mendapatkan SUI dari Faucet](#mendapatkan-sui-dari-faucet) untuk melanjutkan.
+Jika Kamu sudah memiliki address atau sudah membuat address baru saat [Mengkonfigurasi Sui Client](setup-lingkungan-development#konfigurasi-sui-client), Kamu bisa langsung skip ke bagian [Mendapatkan SUI dari Faucet](#mendapatkan-sui-dari-faucet) untuk melanjutkan.
 :::
 
 ### Prerequisites (Persyaratan)
@@ -202,7 +202,7 @@ Kamu bisa menggunakan Sui network explorer untuk menemukan informasi lebih lanju
 - **[SuiScan](https://suiscan.xyz/)**
 
 :::danger
-Data yang ditampilkan di explorer berbeda tergantung pada jaringan mana Kamu membuat address. Jika Kamu sudah mengikuti halaman [Konfigurasi Sui Client](/docs/setup/01-setup-lingkungan-development#konfigurasi-sui-client) sebelumnya, kemungkinan besar Kamu menggunakan Testnet. Pastikan untuk memilih Testnet di Sui explorer atau gunakan URL khusus, seperti https://testnet.suivision.xyz/.
+Data yang ditampilkan di explorer berbeda tergantung pada jaringan mana Kamu membuat address. Jika Kamu sudah mengikuti halaman [Konfigurasi Sui Client](setup-lingkungan-development#konfigurasi-sui-client) sebelumnya, kemungkinan besar Kamu menggunakan Testnet. Pastikan untuk memilih Testnet di Sui explorer atau gunakan URL khusus, seperti https://testnet.suivision.xyz/.
 :::
 
 Dari CLI, Kamu bisa melihat semua objek yang dimiliki oleh address dengan perintah:
