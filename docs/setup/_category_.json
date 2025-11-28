@@ -1,0 +1,12 @@
+{
+  "label": "Setup & Konfigurasi",
+  "position": 3,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "title": "Setup & Konfigurasi",
+    "description": "Panduan lengkap untuk setup environment development dan wallet Sui.",
+    "slug": "/setup"
+  }
+}
+

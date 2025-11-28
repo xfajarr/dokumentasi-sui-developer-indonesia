@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: "Sesi 1: Struktur Proyek & Modul Move"
+title: "Struktur Proyek & Modul Move"
 description: Panduan lengkap struktur proyek dan modul di Move untuk pemula.
 keywords: [sui, blockchain, move, struktur, modul, pemula, indonesia]
 ---
@@ -37,19 +37,19 @@ Mari kita buat proyek pertama kita bersama-sama:
 
 2. **Jalankan Perintah Berikut**
    ```shell
-   sui move new sui_workshop_day2
+   sui move new sui_workshop
    ```
 
 3. **Hasilnya**
-   Perintah ini akan membuat sebuah folder baru bernama `sui_workshop_day2` dengan struktur tertentu.
+   Perintah ini akan membuat sebuah folder baru bernama `sui_workshop` dengan struktur tertentu.
 
 ### Memahami Perintah
 
 ```shell
-sui move new sui_workshop_day2
+sui move new sui_workshop
 ```
 - **`sui move new`**: Perintah untuk membuat proyek Move baru
-- **`sui_workshop_day2`**: Nama proyek kita (bisa diganti sesuai keinginan)
+- **`sui_workshop`**: Nama proyek kita (bisa diganti sesuai keinginan)
 
 ---
 
@@ -83,7 +83,7 @@ Folder ini digunakan untuk menulis tes otomatis untuk smart contract kita. Sanga
 ### Contoh Isi Folder
 
 ```
-sui_workshop_day2/
+sui_workshop/
 ├── Move.toml          # File konfigurasi
 ├── sources/           # Folder untuk kode smart contract
 │   └── (kosong awalnya)
@@ -106,14 +106,14 @@ Bayangkan `Move.toml` seperti **KTP** dan **daftar belanja** proyek kita sekalig
 
 ```toml
 [package]
-name = "sui_workshop_day2"
+name = "sui_workshop"
 version = "0.0.1"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-sui_workshop_day2 = "0x0"
+sui_workshop = "0x0"
 ```
 
 ### Memecah Move.toml
@@ -123,7 +123,7 @@ Mari kita bahas bagian per bagian:
 #### 1. Bagian `[package]`
 ```toml
 [package]
-name = "sui_workshop_day2"
+name = "sui_workshop"
 version = "0.0.1"
 ```
 
@@ -149,11 +149,11 @@ Kita memberi tahu proyek kita: "Hey, kita butuh framework Sui. Ambil dari GitHub
 #### 3. Bagian `[addresses]`
 ```toml
 [addresses]
-sui_workshop_day2 = "0x0"
+sui_workshop = "0x0"
 ```
 
 Ini adalah **alamat** proyek kita di blockchain:
-- **`sui_workshop_day2`**: Nama alias untuk alamat
+- **`sui_workshop`**: Nama alias untuk alamat
 - **`"0x0"`**: Alamat placeholder (sementara)
 
 **Mengapa 0x0?**
@@ -163,7 +163,7 @@ Saat development, kita menggunakan `0x0` sebagai placeholder. Nanti setelah di-p
 
 ```toml
 [package]
-name = "sui_workshop_day2"
+name = "sui_workshop"
 version = "0.0.1"
 authors = ["Nama Anda <email@anda.com>"]
 license = "Apache-2.0"
@@ -174,7 +174,7 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 NftProtocol = { local = "../nft-protocol" }
 
 [addresses]
-sui_workshop_day2 = "0x0"
+sui_workshop = "0x0"
 nft_protocol = "0x0"
 ```
 
@@ -215,7 +215,7 @@ module nama_package::nama_module {
 File: `sources/learning_move.move`
 
 ```rust
-module sui_workshop_day2::learning_move {
+module sui_workshop::learning_move {
     // Import library yang dibutuhkan
     use sui::object::UID;
     use sui::transfer;
@@ -238,10 +238,10 @@ module sui_workshop_day2::learning_move {
 ### Memahami Nama Module
 
 ```rust
-module sui_workshop_day2::learning_move {
+module sui_workshop::learning_move {
 ```
 
-- **`sui_workshop_day2`**: Nama package (dari Move.toml)
+- **`sui_workshop`**: Nama package (dari Move.toml)
 - **`learning_move`**: Nama module (nama file tanpa ekstensi .move)
 
 ### Aturan Penamaan Module
@@ -266,11 +266,11 @@ module sui_workshop_day2::learning_move {
 
 ---
 
-## 5. Praktik: Membuat Project Pertama
+## 5. Praktik: Membuat Contract Pertama
 
-Sekarang mari kita praktekkan membuat project pertama kita!
+Sekarang mari kita praktekkan membuat contract pertama kita! Kali ini kita akan membuat contract yang menggambarkan konsep **object-centric** di Sui dengan cara yang sederhana.
 
-### Langkah 1: Buat Project Baru
+### Langkah 1: Buat Contract Baru
 
 ```shell
 sui move new latihan_pertama
@@ -304,18 +304,66 @@ drwxr-xr-x  2 user  staff    64 Jan 1 12:00 sources
 cat Move.toml
 ```
 
-### Langkah 5: Buat Module Pertama
+### Langkah 5: Buat Module dengan Object
 
-Buat file baru di `sources/halo_dunia.move`:
+Buat file baru di `sources/profile.move`. Contract ini akan membuat **Profile** object yang bisa dimiliki oleh user:
 
 ```rust
-module latihan_pertama::halo_dunia {
-    public fun halo() {
-        // Fungsi sederhana untuk mencetak "Halo, Dunia!"
-        // Di Move, kita tidak bisa langsung print, tapi ini contoh dasar
+module latihan_pertama::profile {
+    use sui::object::{Self, UID};
+    use sui::transfer;
+    use sui::tx_context::{Self, TxContext};
+
+    // Struct Profile - ini adalah object yang akan kita buat
+    struct Profile has key, store {
+        id: UID,
+        name: String,
+        level: u64,
+    }
+
+    // Function untuk membuat Profile baru
+    public entry fun create_profile(
+        name: String,
+        ctx: &mut TxContext
+    ) {
+        // Membuat Profile object baru
+        let profile = Profile {
+            id: object::new(ctx),
+            name,
+            level: 1,  // Level awal adalah 1
+        };
+
+        // Transfer object ke sender (pembuat)
+        transfer::transfer(profile, tx_context::sender(ctx));
+    }
+
+    // Function untuk meningkatkan level
+    public entry fun level_up(
+        profile: &mut Profile
+    ) {
+        profile.level = profile.level + 1;
+    }
+
+    // View function untuk melihat level
+    public fun get_level(profile: &Profile): u64 {
+        profile.level
     }
 }
 ```
+
+**Penjelasan Kode:**
+
+1. **`struct Profile`**: Ini adalah object yang akan kita buat. Memiliki:
+   - `has key`: Artinya ini adalah object yang bisa dimiliki (owned object)
+   - `has store`: Artinya object ini bisa disimpan di dalam object lain atau ditransfer
+   - `id: UID`: Unique identifier untuk object ini
+   - `name` dan `level`: Data yang disimpan dalam object
+
+2. **`create_profile`**: Function untuk membuat Profile object baru dan mentransfernya ke pembuat
+
+3. **`level_up`**: Function untuk meningkatkan level (mengubah data dalam object)
+
+4. **`get_level`**: View function untuk membaca level tanpa mengubah object
 
 ### Langkah 6: Build Project
 
@@ -330,6 +378,163 @@ INCLUDING DEPENDENCY MoveStdlib
 BUILDING latihan_pertama
 Successfully built modules
 ```
+
+### Langkah 7: Deploy Contract ke Sui Network
+
+Setelah build berhasil, kita perlu deploy contract ke Sui network (bisa testnet atau devnet):
+
+```shell
+sui client publish
+```
+
+**Penjelasan Perintah:**
+- `sui client publish`: Deploy contract ke Sui network
+
+**Output yang Akan Muncul:**
+```
+Transaction Digest: 0x1234567890abcdef...
+Published Objects:
+  - PackageID: 0xabcdef1234567890...
+  - ObjectID: 0x9876543210fedcba...
+```
+
+> **Penting:** Simpan **PackageID** yang muncul, karena kita akan membutuhkannya untuk memanggil function!
+
+### Langkah 8: Memanggil Function dengan Sui Client
+
+Setelah contract di-deploy, kita bisa memanggil function yang sudah dibuat menggunakan `sui client call`.
+
+#### 8.1. Memanggil `create_profile`
+
+Untuk membuat Profile object baru:
+
+```shell
+sui client call \
+  --package <PACKAGE_ID> \
+  --module profile \
+  --function create_profile \
+  --args "Sui Developer" \
+  --gas-budget 10000000
+```
+
+**Penjelasan Perintah:**
+- `--package <PACKAGE_ID>`: Ganti dengan PackageID yang didapat dari deploy
+- `--module profile`: Nama module kita
+- `--function create_profile`: Nama function yang ingin dipanggil
+- `--args "Sui Developer"`: Argument untuk function (nama dalam bentuk string)
+- `--gas-budget 10000000`: Budget gas untuk transaksi
+
+**Contoh dengan PackageID:**
+```shell
+sui client call \
+  --package 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890 \
+  --module profile \
+  --function create_profile \
+  --args "Sui Developer" \
+  --gas-budget 10000000
+```
+
+**Output:**
+```
+Transaction Digest: 0x...
+Created Objects:
+  - ObjectID: 0x... (Profile object yang baru dibuat)
+```
+
+**Penting:** Simpan **ObjectID** dari Profile yang baru dibuat, karena kita akan membutuhkannya untuk memanggil `level_up`!
+
+#### 8.2. Memanggil `level_up`
+
+Untuk meningkatkan level Profile yang sudah dibuat:
+
+```shell
+sui client call \
+  --package <PACKAGE_ID> \
+  --module profile \
+  --function level_up \
+  --args <PROFILE_OBJECT_ID> \
+  --gas-budget 10000000
+```
+
+**Penjelasan Perintah:**
+- `--args <PROFILE_OBJECT_ID>`: ObjectID dari Profile yang ingin di-update
+
+**Contoh dengan ObjectID:**
+```shell
+sui client call \
+  --package 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890 \
+  --module profile \
+  --function level_up \
+  --args 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef \
+  --gas-budget 10000000
+```
+
+**Output:**
+```
+Transaction Digest: 0x...
+Mutated Objects:
+  - ObjectID: 0x... (Profile object yang di-update)
+```
+
+### Langkah 9: Melihat Object yang Dibuat
+
+Untuk melihat detail Profile object yang sudah dibuat:
+
+```shell
+sui client object <PROFILE_OBJECT_ID>
+```
+
+**Contoh:**
+```shell
+sui client object 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+```
+
+**Output:**
+```json
+{
+  "data": {
+    "objectId": "0x...",
+    "type": "0x...::profile::Profile",
+    "content": {
+      "dataType": "moveObject",
+      "fields": {
+        "id": {...},
+        "level": 2,
+        "name": "Sui Developer"
+      }
+    }
+  }
+}
+```
+
+### Tips Praktis
+
+1. **Menyimpan PackageID dan ObjectID**: Gunakan alias atau simpan di file untuk memudahkan:
+   ```shell
+   export PACKAGE_ID=0xabcdef1234567890...
+   export PROFILE_ID=0x1234567890abcdef...
+   
+   sui client call --package $PACKAGE_ID --module profile --function level_up --args $PROFILE_ID --gas-budget 10000000
+   ```
+
+2. **Menggunakan Active Address**: Pastikan kamu sudah set active address:
+   ```shell
+   sui client active-address
+   ```
+
+3. **Melihat Semua Object yang Dimiliki**:
+   ```shell
+   sui client objects
+   ```
+
+### Apa yang Sudah Kita Pelajari?
+
+✅ **Membuat Object**: Membuat struct dengan `key` dan `store` abilities  
+✅ **Create Function**: Membuat function untuk membuat object baru  
+✅ **Update Function**: Membuat function untuk mengubah data dalam object  
+✅ **Deploy Contract**: Menggunakan `sui client publish`  
+✅ **Call Function**: Menggunakan `sui client call` untuk memanggil function  
+✅ **View Object**: Menggunakan `sui client object` untuk melihat detail object
 
 ---
 
@@ -391,46 +596,7 @@ Successfully built modules
 
 ---
 
-## 7. Latihan Praktis untuk Pemula
-
-### Latihan 1: Membuat Project Sederhana
-
-1. Buat project baru dengan nama `belajar_move`
-2. Lihat struktur folder yang dibuat
-3. Buka file Move.toml dan pahami isinya
-4. Buat module pertama dengan nama `salam`
-5. Tambahkan fungsi `public fun pagi()` di dalamnya
-6. Build project dan pastikan tidak ada error
-
-### Latihan 2: Memahami Dependencies
-
-1. Buat project baru dengan nama `latihan_dependency`
-2. Buka file Move.toml
-3. Coba tambahkan dependency baru (meskipun mungkin belum digunakan):
-   ```toml
-   [dependencies]
-   Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
-   ```
-4. Build project dan lihat apa yang terjadi
-
-### Latihan 3: Membuat Multiple Module
-
-1. Buat project baru dengan nama `multi_module`
-2. Buat 3 module berbeda:
-   - `sources/user.move`
-   - `sources/product.move`
-   - `sources/order.move`
-3. Setiap module harus memiliki struktur dasar:
-   ```rust
-   module multi_module::nama_module {
-       // Kosong dulu, fokus pada struktur
-   }
-   ```
-4. Build project dan pastikan semua module terdeteksi
-
----
-
-## 8. Kesimpulan
+## 7. Kesimpulan
 
 ### Apa yang Sudah Kita Pelajari?
 

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: "Sesi 2: Sintaks Dasar Move"
+title: "Sintaks Dasar Move"
 description: Panduan lengkap sintaks dasar bahasa Move untuk pemula.
 keywords: [sui, blockchain, move, sintaks, pemula, indonesia]
 ---
@@ -135,21 +135,19 @@ let daftar_nama: vector<String> = vector[
 ### Contoh Praktis: Menggabungkan Semua Tipe Data
 
 ```rust
-module example::data_types {
+module latihan_pertama::data_types {
     use std::string::String;
-    use sui::url::Url;
 
     // Fungsi contoh yang menggunakan berbagai tipe data
     public fun contoh_data() {
         // Tipe data primitif
-        let umur: u64 = 25;
+        let level: u64 = 25;
         let is_active: bool = true;
         let alamat: address = 0x1234;
         
         // Tipe data lanjutan
-        let nama: String = string::utf8(b"Budi Santoso");
-        let website: Url = url::new_unsafe_from_bytes(b"https://example.com");
-        let skor: vector<u64> = vector[90, 85, 95];
+        let nama: String = string::utf8(b"Sui Developer");
+        let level_history: vector<u64> = vector[1, 5, 10, 15, 20, 25];
         
         // Kita bisa menggunakan variabel-variabel ini
         // dalam logika smart contract kita
@@ -361,68 +359,71 @@ public fun send_tokens(to_address: address, amount: u64) {
 
 ## 4. Praktik: Menggabungkan Semua Konsep
 
-Sekarang mari kita lihat contoh yang menggabungkan semua konsep yang telah kita pelajari:
+Sekarang mari kita lihat contoh yang menggabungkan semua konsep yang telah kita pelajari. Contoh ini menggunakan contract `Profile` yang sama dengan yang kita buat di sesi sebelumnya:
 
 ```rust
-module example::praktik_sintaks {
-    use std::string::String;
+module latihan_pertama::profile {
+    use sui::object::{Self, UID};
+    use sui::transfer;
+    use sui::tx_context::{Self, TxContext};
+    use std::string::{Self, String};
     
     // Konstanta untuk kode error
-    const ERROR_AGE_TOO_LOW: u64 = 0;
-    const ERROR_NAME_EMPTY: u64 = 1;
-    const ERROR_SCORE_INVALID: u64 = 2;
+    const ERROR_NAME_EMPTY: u64 = 0;
+    const ERROR_LEVEL_TOO_HIGH: u64 = 1;
     
-    // Struct untuk menyimpan data peserta
-    struct Participant has key, store {
-        id: u64,
+    // Struct Profile - ini adalah object yang akan kita buat
+    struct Profile has key, store {
+        id: UID,
         name: String,
-        age: u64,
-        score: u64,
-        is_active: bool
+        level: u64,
     }
     
-    // Fungsi untuk membuat peserta baru
-    public fun create_participant(
-        id: u64,
+    // Fungsi untuk membuat Profile baru dengan validasi
+    public entry fun create_profile(
         name: String,
-        age: u64,
-        score: u64,
         ctx: &mut TxContext
-    ): Participant {
+    ) {
         // Validasi input dengan assert!
-        assert!(age >= 18, ERROR_AGE_TOO_LOW);
-        assert!(name.length() > 0, ERROR_NAME_EMPTY);
-        assert!(score <= 100, ERROR_SCORE_INVALID);
+        assert!(string::length(&name) > 0, ERROR_NAME_EMPTY);
         
-        // Tentukan status aktif berdasarkan skor
-        let is_active = if (score >= 60) {
-            true
-        } else {
-            false
-        };
-        
-        // Buat dan kembalikan objek Participant
-        Participant {
-            id,
+        // Membuat Profile object baru
+        let profile = Profile {
+            id: object::new(ctx),
             name,
-            age,
-            score,
-            is_active
-        }
+            level: 1,  // Level awal adalah 1
+        };
+
+        // Transfer object ke sender (pembuat)
+        transfer::transfer(profile, tx_context::sender(ctx));
     }
     
-    // Fungsi untuk menghitung grade
-    public fun calculate_grade(score: u64): u8 {
-        if (score >= 90) {
-            100  // A
-        } else if (score >= 80) {
-            90   // B
-        } else if (score >= 70) {
-            80   // C
-        } else if (score >= 60) {
-            70   // D
+    // Fungsi untuk meningkatkan level dengan validasi
+    public entry fun level_up(
+        profile: &mut Profile
+    ) {
+        // Validasi: level tidak boleh lebih dari 100
+        assert!(profile.level < 100, ERROR_LEVEL_TOO_HIGH);
+        
+        // Tingkatkan level
+        profile.level = profile.level + 1;
+    }
+    
+    // View function untuk melihat level
+    public fun get_level(profile: &Profile): u64 {
+        profile.level
+    }
+    
+    // Fungsi untuk menentukan status berdasarkan level
+    public fun get_status(profile: &Profile): u8 {
+        if (profile.level >= 50) {
+            3  // Expert
+        } else if (profile.level >= 20) {
+            2  // Advanced
+        } else if (profile.level >= 10) {
+            1  // Intermediate
         } else {
-            60   // E
+            0  // Beginner
         }
     }
 }
@@ -431,10 +432,11 @@ module example::praktik_sintaks {
 ### Penjelasan Kode di Atas
 
 1. **Konstanta Error**: Mendefinisikan kode error untuk berbagai jenis validasi
-2. **Struct Participant**: Mendefinisikan blueprint untuk data peserta
-3. **Validasi Input**: Menggunakan `assert!` untuk memastikan input valid
-4. **Logika Kondisional**: Menggunakan `if-else` untuk menentukan status aktif
-5. **Fungsi Grade**: Menggunakan `if-else` bertingkat untuk menghitung grade
+2. **Struct Profile**: Mendefinisikan blueprint untuk Profile object dengan `key` dan `store` abilities
+3. **Validasi Input**: Menggunakan `assert!` untuk memastikan nama tidak kosong dan level tidak melebihi batas
+4. **Logika Kondisional**: Menggunakan `if-else` untuk menentukan status berdasarkan level
+5. **Create Function**: Membuat Profile object baru dan mentransfernya ke pembuat
+6. **Update Function**: Meningkatkan level dengan validasi
 
 ---
 
@@ -445,19 +447,19 @@ module example::praktik_sintaks {
 Coba buat variabel-variabel berikut di Move Playground:
 
 ```rust
-module latihan::sintaks_dasar {
+module latihan_pertama::sintaks_dasar {
     use std::string::String;
     
     public fun latihan_variabel() {
         // Buat variabel immutable untuk nama (String)
         
-        // Buat variabel mutable untuk umur (u64)
+        // Buat variabel mutable untuk level (u64)
         
-        // Ubah nilai umur menjadi umur + 1
+        // Ubah nilai level menjadi level + 1
         
         // Buat variabel boolean untuk status aktif
         
-        // Buat vector berisi 3 angka favorit kamu
+        // Buat vector berisi 3 level yang sudah dicapai
     }
 }
 ```
@@ -467,16 +469,16 @@ module latihan::sintaks_dasar {
 Lengkapi fungsi berikut:
 
 ```rust
-module latihan::logika_kondisional {
-    public fun cek_genap(angka: u64): bool {
-        // Return true jika angka genap, false jika ganjil
+module latihan_pertama::logika_kondisional {
+    public fun cek_level_genap(level: u64): bool {
+        // Return true jika level genap, false jika ganjil
         // Hint: Gunakan operator %
     }
     
-    public fun harga_tiket(umur: u64): u64 {
-        // Jika umur < 12, harga = 10000
-        // Jika umur 12-60, harga = 25000
-        // Jika umur > 60, harga = 15000
+    public fun dapat_bonus(level: u64): u64 {
+        // Jika level < 10, bonus = 100
+        // Jika level 10-50, bonus = 500
+        // Jika level > 50, bonus = 1000
     }
 }
 ```
@@ -486,21 +488,24 @@ module latihan::logika_kondisional {
 Lengkapi fungsi berikut dengan menambahkan validasi menggunakan `assert!`:
 
 ```rust
-module latihan::error_handling {
+module latihan_pertama::error_handling {
+    use std::string::String;
+    
     // Definisikan konstanta untuk kode error
     
-    public fun tarik_uang(saldo: u64, jumlah: u64): u64 {
-        // Validasi: jumlah tidak boleh 0
+    public fun level_up(level: u64, tambahan: u64): u64 {
+        // Validasi: tambahan tidak boleh 0
         
-        // Validasi: jumlah tidak boleh lebih besar dari saldo
+        // Validasi: level + tambahan tidak boleh lebih dari 100
         
-        // Jika validasi lolos, kembalikan saldo - jumlah
+        // Jika validasi lolos, kembalikan level + tambahan
     }
     
-    public fun daftar_peserta(umur: u64, nama: String): bool {
-        // Validasi: umur minimal 17 tahun
-        
+    public fun buat_profile(nama: String, level_awal: u64): bool {
         // Validasi: nama tidak boleh kosong
+        // Hint: gunakan string::length()
+        
+        // Validasi: level_awal minimal 1
         
         // Jika validasi lolos, return true
     }

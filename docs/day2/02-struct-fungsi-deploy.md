@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: "Sesi 3: Struct, Fungsi dan Deploy Smart Contract Pertamamu"
+title: "Struct, Fungsi dan Deploy Smart Contract Pertamamu"
 description: Panduan lengkap untuk membuat dan mendeploy smart contract pertama di Sui blockchain.
 keywords: [sui, blockchain, smart contract, pemula, indonesia]
 ---
@@ -23,18 +23,19 @@ Selamat datang di sesi paling praktis hari ini! Di sesi ini, kita akan menggabun
 
 Bayangkan `struct` seperti **cetak biru (blueprint)** untuk membuat objek di blockchain. Sama seperti cetak biru rumah yang mendefinisikan bagaimana rumah akan dibangun, `struct` mendefinisikan bagaimana aset digital kita akan terlihat dan berperilaku.
 
-### Contoh: Kartu Peserta Workshop
+### Contoh: Profile Object
 
-Mari kita buat contoh sederhana: sebuah Kartu Peserta untuk workshop kita.
+Mari kita buat contoh sederhana: sebuah Profile object yang menggambarkan konsep object-centric di Sui.
 
 ```rust
 use sui::object::UID;
+use std::string::String;
 
-// Blueprint untuk sebuah "Kartu Peserta"
-struct WorkshopCard has key, store {
+// Blueprint untuk sebuah "Profile"
+struct Profile has key, store {
     id: UID,
-    participant_address: address,
-    attendance_count: u64
+    name: String,
+    level: u64
 }
 ```
 
@@ -43,18 +44,18 @@ struct WorkshopCard has key, store {
 Mari kita pecah kode ini bagian per bagian:
 
 ```rust
-struct WorkshopCard has key, store {
-    // Field-field (properti) dari Kartu Peserta
-    id: UID,                    // ID unik untuk setiap kartu
-    participant_address: address, // Alamat pemilik kartu
-    attendance_count: u64        // Berapa kali peserta hadir
+struct Profile has key, store {
+    // Field-field (properti) dari Profile
+    id: UID,                    // ID unik untuk setiap object
+    name: String,              // Nama user
+    level: u64                 // Level user (u64 = bilangan bulat positif)
 }
 ```
 
-- **`WorkshopCard`**: Nama blueprint/struct kita
-- **`id: UID`**: Setiap kartu akan memiliki ID unik yang dihasilkan oleh sistem
-- **`participant_address: address`**: Alamat wallet pemilik kartu
-- **`attendance_count: u64`**: Angka yang menyimpan berapa kali peserta hadir (u64 = bilangan bulat positif)
+- **`Profile`**: Nama blueprint/struct kita
+- **`id: UID`**: Setiap object akan memiliki ID unik yang dihasilkan oleh sistem
+- **`name: String`**: Nama user dalam bentuk string
+- **`level: u64`**: Level user yang dimulai dari 1
 
 ### Apa itu "Abilities"?
 
@@ -99,28 +100,32 @@ Sekarang kita punya blueprint, tapi kita butuh cara untuk **membuat** dan **meng
 
 Function adalah **logika** atau **aksi** yang bisa dilakukan oleh smart contract kita. Jika struct adalah cetak biru, maka function adalah pabrik yang memproduksi objek dari cetak biru tersebut.
 
-### Contoh: Fungsi untuk Membuat Kartu
+### Contoh: Fungsi untuk Membuat Profile
 
-Mari kita buat fungsi yang akan membuat Kartu Peserta baru:
+Mari kita buat fungsi yang akan membuat Profile object baru:
 
 ```rust
 use sui::object::{Self, UID};
 use sui::tx_context::{Self, TxContext};
 use sui::transfer;
+use std::string::String;
 
-// ... struct WorkshopCard ...
+// ... struct Profile ...
 
 // 'entry' berarti fungsi ini bisa dipanggil langsung sebagai transaksi
-entry fun create_card(ctx: &mut TxContext) {
+public entry fun create_profile(
+    name: String,
+    ctx: &mut TxContext
+) {
     // Langkah 1: Membuat instance dari struct
-    let card = WorkshopCard {
+    let profile = Profile {
         id: object::new(ctx),
-        participant_address: tx_context::sender(ctx),
-        attendance_count: 1
+        name,
+        level: 1  // Level awal adalah 1
     };
     
     // Langkah 2: Mengirim objek ke si pembuat transaksi
-    transfer::public_transfer(card, tx_context::sender(ctx));
+    transfer::transfer(profile, tx_context::sender(ctx));
 }
 ```
 
@@ -130,31 +135,35 @@ Mari kita pecah fungsi ini langkah demi langkah:
 
 #### 1. Deklarasi Fungsi
 ```rust
-entry fun create_card(ctx: &mut TxContext) {
+public entry fun create_profile(
+    name: String,
+    ctx: &mut TxContext
+) {
 ```
-- **`entry`**: Kata kunci yang berarti fungsi ini bisa dipanggil langsung sebagai transaksi oleh pengguna
-- **`create_card`**: Nama fungsi kita
+- **`public entry`**: Kata kunci yang berarti fungsi ini bisa dipanggil langsung sebagai transaksi oleh pengguna
+- **`create_profile`**: Nama fungsi kita
+- **`name: String`**: Parameter untuk nama user
 - **`ctx: &mut TxContext`**: Parameter khusus yang berisi informasi tentang transaksi (siapa pengirim, dll)
 
 #### 2. Membuat Objek
 ```rust
-let card = WorkshopCard {
+let profile = Profile {
     id: object::new(ctx),
-    participant_address: tx_context::sender(ctx),
-    attendance_count: 1
+    name,
+    level: 1
 };
 ```
-- **`let card = WorkshopCard { ... }`**: Membuat instance baru dari struct WorkshopCard
+- **`let profile = Profile { ... }`**: Membuat instance baru dari struct Profile
 - **`id: object::new(ctx)`**: Membuat ID unik untuk objek ini
-- **`participant_address: tx_context::sender(ctx)`**: Mengisi alamat pemilik dengan alamat pengirim transaksi
-- **`attendance_count: 1`**: Mengisi jumlah kehadiran dengan 1 (karena ini kartu pertama)
+- **`name`**: Menggunakan parameter name yang diberikan
+- **`level: 1`**: Mengisi level dengan 1 (level awal)
 
 #### 3. Mengirim Objek
 ```rust
-transfer::public_transfer(card, tx_context::sender(ctx));
+transfer::transfer(profile, tx_context::sender(ctx));
 ```
-- **`transfer::public_transfer`**: Fungsi bawaan Sui untuk mengirim objek ke alamat tertentu
-- **`card`**: Objek yang ingin kita kirim
+- **`transfer::transfer`**: Fungsi bawaan Sui untuk mengirim owned object ke alamat tertentu
+- **`profile`**: Objek yang ingin kita kirim
 - **`tx_context::sender(ctx)`**: Alamat tujuan (dalam hal ini, alamat pengirim)
 
 ### Jenis-jenis Fungsi di Move
@@ -169,40 +178,61 @@ Ada beberapa jenis fungsi di Move yang perlu diketahui:
 
 ## 3. Menggabungkan Semua: Smart Contract Lengkap
 
-Sekarang mari kita lihat bagaimana semua bagian ini digabungkan menjadi satu smart contract utuh:
+Sekarang mari kita lihat bagaimana semua bagian ini digabungkan menjadi satu smart contract utuh. Ini adalah contract yang sama dengan yang kita buat di sesi sebelumnya:
 
 ```rust
-// File: sources/learning_move.move
-module sui_workshop_day2::learning_move {
+// File: sources/profile.move
+module latihan_pertama::profile {
     use sui::object::{Self, UID};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
+    use std::string::String;
 
-    // Blueprint untuk Kartu Peserta
-    struct WorkshopCard has key, store {
+    // Blueprint untuk Profile
+    struct Profile has key, store {
         id: UID,
-        participant_address: address,
-        attendance_count: u64
+        name: String,
+        level: u64,
     }
 
-    // Fungsi untuk membuat kartu baru
-    entry fun create_card(ctx: &mut TxContext) {
-        let card = WorkshopCard {
+    // Fungsi untuk membuat Profile baru
+    public entry fun create_profile(
+        name: String,
+        ctx: &mut TxContext
+    ) {
+        // Membuat Profile object baru
+        let profile = Profile {
             id: object::new(ctx),
-            participant_address: tx_context::sender(ctx),
-            attendance_count: 1
+            name,
+            level: 1,  // Level awal adalah 1
         };
-        transfer::public_transfer(card, tx_context::sender(ctx));
+
+        // Transfer object ke sender (pembuat)
+        transfer::transfer(profile, tx_context::sender(ctx));
+    }
+
+    // Function untuk meningkatkan level
+    public entry fun level_up(
+        profile: &mut Profile
+    ) {
+        profile.level = profile.level + 1;
+    }
+
+    // View function untuk melihat level
+    public fun get_level(profile: &Profile): u64 {
+        profile.level
     }
 }
 ```
 
 ### Penjelasan Struktur Smart Contract
 
-1. **`module sui_workshop_day2::learning_move`**: Mendefinisikan modul dengan nama package `sui_workshop_day2` dan nama modul `learning_move`
+1. **`module latihan_pertama::profile`**: Mendefinisikan modul dengan nama package `latihan_pertama` dan nama modul `profile`
 2. **`use ...`**: Mengimpor fungsi-fungsi yang kita butuhkan dari framework Sui
-3. **`struct WorkshopCard`**: Mendefinisikan blueprint untuk Kartu Peserta
-4. **`entry fun create_card`**: Mendefinisikan fungsi untuk membuat kartu baru
+3. **`struct Profile`**: Mendefinisikan blueprint untuk Profile object dengan `key` dan `store` abilities
+4. **`public entry fun create_profile`**: Mendefinisikan fungsi untuk membuat Profile baru
+5. **`public entry fun level_up`**: Mendefinisikan fungsi untuk meningkatkan level
+6. **`public fun get_level`**: View function untuk membaca level tanpa mengubah object
 
 ---
 
@@ -214,7 +244,7 @@ Sekarang saatnya yang paling ditunggu-tunggu! Kita akan membangun dan mendeploy 
 
 Sebelum mendeploy, kita perlu memastikan kode kita tidak memiliki error.
 
-1. Buka terminal di folder proyek kamu (`sui_workshop_day2`)
+1. Buka terminal di folder proyek kamu (`latihan_pertama`)
 2. Jalankan perintah berikut:
 
 ```shell
@@ -225,7 +255,7 @@ sui move build
 ```
 INCLUDING DEPENDENCY Sui
 INCLUDING DEPENDENCY MoveStdlib
-BUILDING learning_move
+BUILDING latihan_pertama
 Successfully built modules
 ```
 
@@ -239,13 +269,12 @@ Setelah kode berhasil dibangun, saatnya mendeploy ke blockchain Sui Testnet.
 2. Jalankan perintah berikut untuk mendeploy smart contract:
 
 ```shell
-sui client publish --gas-budget 50000000
+sui client publish
 ```
 
 ### Memahami Perintah Publish
 
 - **`sui client publish`**: Perintah untuk mempublikasikan smart contract ke blockchain
-- **`--gas-budget 50000000`**: Menentukan batas maksimum gas (biaya transaksi) yang bersedia kita bayar
 
 ### Hasil yang Diharapkan
 
@@ -287,15 +316,41 @@ Kamu seharusnya melihat informasi tentang smart contract yang baru saja kamu dep
 
 ### Langkah 4: Menguji Smart Contract
 
-Sekarang mari kita uji smart contract kita dengan memanggil fungsi `create_card`:
+Sekarang mari kita uji smart contract kita dengan memanggil fungsi `create_profile`:
 
 ```shell
-sui client call --function create_card --module learning_move --package <Package_ID_Here> --gas-budget 10000000
+sui client call \
+  --package <PACKAGE_ID> \
+  --module profile \
+  --function create_profile \
+  --args "Sui Developer" \
+  --gas-budget 10000000
 ```
 
-Ganti `<Package_ID_Here>` dengan Package ID yang kamu dapatkan dari hasil deploy.
+Ganti `<PACKAGE_ID>` dengan Package ID yang kamu dapatkan dari hasil deploy.
 
-Jika berhasil, kamu akan melihat output yang menunjukkan bahwa sebuah objek `WorkshopCard` baru telah dibuat dan dikirim ke alamat kamu.
+**Contoh dengan PackageID:**
+```shell
+sui client call \
+  --package 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890 \
+  --module profile \
+  --function create_profile \
+  --args "Sui Developer" \
+  --gas-budget 10000000
+```
+
+Jika berhasil, kamu akan melihat output yang menunjukkan bahwa sebuah objek `Profile` baru telah dibuat dan dikirim ke alamat kamu. Simpan **ObjectID** dari Profile yang baru dibuat!
+
+Kamu juga bisa memanggil fungsi `level_up` untuk meningkatkan level:
+
+```shell
+sui client call \
+  --package <PACKAGE_ID> \
+  --module profile \
+  --function level_up \
+  --args <PROFILE_OBJECT_ID> \
+  --gas-budget 10000000
+```
 
 ---
 

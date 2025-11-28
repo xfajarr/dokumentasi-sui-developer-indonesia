@@ -1,10 +1,10 @@
 {
-  "label": "Hari 2: Deep Dive Move Smart contract",
-  "position": 3,
-  "collapsed": false,
+  "label": "Deep Dive Move Smart contract",
+  "position": 4,
+  "collapsed": true,
   "link": {
     "type": "generated-index",
-    "title": "Hari 2: Deep Dive Sui & Move",
+    "title": "Deep Dive Sui & Move",
     "description": "Materi dan latihan untuk hari kedua workshop Sui.",
     "slug": "/day-2"
   }

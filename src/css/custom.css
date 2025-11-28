@@ -86,6 +86,20 @@
   color: var(--ifm-color-primary-lighter);
 }
 
+/* Dark mode footer - different gradient with darker Sui colors */
+[data-theme='dark'] .footer--dark {
+  background: linear-gradient(135deg, var(--ifm-color-primary-lightest) 0%, var(--ifm-color-primary-lighter) 60%, var(--ifm-color-primary-light) 100%);
+  color: #FFFFFF;
+}
+
+[data-theme='dark'] .footer--dark a {
+  color: #FFFFFF;
+}
+
+[data-theme='dark'] .footer--dark a:hover {
+  color: var(--ifm-color-primary-lighter);
+}
+
 /* Primary CTA: clean and high-contrast for Indonesian readers */
 .hero .button.button--secondary {
   background-color: #FFFFFF;
@@ -98,6 +112,21 @@
   background-color: var(--ifm-color-primary-lightest);
   color: var(--ifm-color-primary-darkest);
   border-color: var(--ifm-color-primary);
+}
+
+/* Dark mode button styling */
+[data-theme='dark'] .hero .button.button--secondary {
+  background-color: var(--ifm-color-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--ifm-color-primary);
+  box-shadow: 0 2px 8px rgba(77, 162, 255, 0.30);
+}
+
+[data-theme='dark'] .hero .button.button--secondary:hover {
+  background-color: var(--ifm-color-primary-dark);
+  color: #FFFFFF;
+  border-color: var(--ifm-color-primary-dark);
+  box-shadow: 0 4px 12px rgba(77, 162, 255, 0.40);
 }
 
 /* Slightly thicker link underline for readability */

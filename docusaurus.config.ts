@@ -59,6 +59,12 @@ const config: Config = {
     colorMode: {
       respectPrefersColorScheme: true,
     },
+    docs: {
+      sidebar: {
+        hideable: true,
+        autoCollapseCategories: true,
+      },
+    },
     navbar: {
       title: '',
       logo: {
@@ -92,11 +98,11 @@ const config: Config = {
           items: [
             {
               label: 'Telegram',
-              href: 'https://t.me/blockdevid',
+              href: 'https://t.me/moveindonesia',
             },
             {
               label: 'X',
-              href: 'https://x.com/blockdevid',
+              href: 'https://x.com/SuiCommunity_ID',
             },
           ],
         },
