@@ -7,48 +7,119 @@ keywords: [sui, blockchain, escrow, smart contract, praktik, indonesia]
 
 # Praktik: Membuat Escrow Smart Contract
 
-Selamat datang di sesi praktik. Kita akan membuat **Escrow Smart Contract** sederhana di jaringan Sui. Escrow ibarat kotak aman yang memegang dana sampai penjual dan pembeli selesai bertransaksi.
+Selamat datang di sesi praktik. Kita akan membuat **Escrow Smart Contract** sederhana di Blockchain Sui.
 
 ## Apa yang Akan Dipelajari
 
-- menyiapkan proyek Move dari nol
-- memahami kode lengkap `simple_escrow` dan `mock_coin`
-- penjelasan setiap bagian kode dengan bahasa mudah
-- cerita dan alur escrow supaya konsepnya jelas
-- langkah build, publish, dan uji smart contract
-- tips dasar memecah coin, membaca object, dan menangani error
+- Konsep escrow dan cara kerjanya di blockchain
+- Menyiapkan proyek Move dari awal
+- Memahami struktur dan fungsi smart contract escrow
+- Membuat dan menggunakan mock coin untuk testing
+- Langkah-langkah build, publish, dan testing smart contract
+- Tips troubleshooting dan debugging
 
 ---
 
-## 1. Siapkan Proyek
+## 1. Konsep Escrow
 
-1. buat folder baru:  
-   ```bash
-   sui move new escrow_contract
-   cd escrow_contract
-   ```
-2. buka `Move.toml` dan isi seperti berikut:
-   ```toml
-   [package]
-   name = "escrow"
-   version = "0.0.1"
+### 1.1. Apa itu Escrow?
 
-   [dependencies]
-   Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+Escrow adalah sistem perantara yang aman untuk transaksi antara dua pihak. Bayangkan kamu ingin **swap token A dengan token B**:
 
-   [addresses]
-   escrow = "0x0"
-   ```
-3. buat file `sources/escrow.move`, lalu salin kode `simple_escrow` dan `mock_coin` pada bagian berikutnya
-4. jalankan `sui move build` untuk memastikan proyek valid
+- **Penjual** memiliki token A dan ingin menukarnya dengan token B
+- **Pembeli** memiliki token B dan ingin menukarnya dengan token A
+- Kedua pihak ingin memastikan transaksi aman tanpa risiko rug pull
 
-Jika build berhasil, Move compiler menampilkan pesan sukses. Setelah proyek siap, kita lanjut ke kode utama.
+Escrow menyediakan solusi netral:
+1. Penjual menaruh token A (deposit) ke kotak aman (escrow)
+2. Pembeli menyerahkan token B (pembayaran) ke kotak aman
+3. Setelah semuanya cocok, pembeli menerima token A dan penjual mengambil token B
+4. Jika ada masalah, penjual bisa membatalkan dan menarik deposit kembali
+
+Di blockchain, alur ini dijalankan otomatis oleh smart contract tanpa campur tangan manusia.
+
+**Contoh Real-World**:
+- Swap TBTC dengan zSUI
+- Swap USDC dengan SUI
+- Swap token A dengan token B (cross-chain atau same-chain)
+
+### 1.2. Alur Escrow di Sui
+
+1. **Penjual membuat escrow**: 
+   - Menaruh token A (DepositCoinType) sebagai deposit
+   - Menentukan jumlah token B (PaymentCoinType) yang diminta
+   - Escrow object disimpan di blockchain
+
+2. **Pembeli menerima escrow**: 
+   - Mengirim token B (PaymentCoinType) sesuai jumlah yang diminta
+   - Langsung menerima token A (DepositCoinType) dari escrow
+
+3. **Penjual menarik pembayaran**: 
+   - Setelah pembeli membayar, penjual bisa menarik token B (PaymentCoinType) kapan saja
+
+4. **Pembatalan (opsional)**: 
+   - Penjual dapat membatalkan escrow jika belum ada pembayaran
+   - Deposit token A dikembalikan ke penjual
 
 ---
 
-## 2. Kode Lengkap `simple_escrow`
+## 2. Persiapan Proyek
 
-Di bawah ini adalah kode Move escrow yang akan dipakai sepanjang latihan. Jangan ubah kodenya agar sesuai dengan instruksi berikut.
+### 2.1. Membuat Proyek Baru
+
+Buat folder proyek baru dengan perintah berikut:
+
+```bash
+sui move new escrow_contract
+```
+
+Masuk ke folder proyek:
+```bash
+cd escrow_contract
+```
+
+### 2.2. Konfigurasi `Move.toml`
+
+Buka file `Move.toml` dan isi dengan konfigurasi berikut:
+
+```toml
+[package]
+name = "escrow"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+simple_escrow = "0x0"
+mock_coin = "0x0"
+```
+
+### 2.3. Membuat File Source
+
+Buat dua file berikut di folder `sources/`:
+- `sources/simple_escrow.move`
+- `sources/mock_coin.move`
+
+Salin kode dari bagian berikutnya ke file-file tersebut.
+
+### 2.4. Build Proyek
+
+Jalankan build untuk memastikan proyek valid:
+
+```bash
+sui move build
+```
+
+Jika build berhasil, Move compiler akan menampilkan pesan sukses.
+
+---
+
+## 3. Kode Smart Contract
+
+### 3.1. Modul `simple_escrow`
+
+Buat file `sources/simple_escrow.move` dan salin kode berikut:
 
 ```rust
 module escrow::simple_escrow {
@@ -56,37 +127,44 @@ module escrow::simple_escrow {
     use sui::balance::Balance;
     use sui::coin;
     use sui::coin::Coin;
+    use sui::object;
+    use sui::transfer;
+    use sui::tx_context::TxContext;
 
-    /// Escrow sederhana untuk koin fungible apa pun.
-    public struct Escrow<phantom CoinType: store> has key, store {
+    /// Escrow untuk swap antara dua tipe koin berbeda.
+    /// DepositCoinType: tipe koin yang di-deposit oleh seller
+    /// PaymentCoinType: tipe koin yang harus dibayar oleh buyer
+    public struct Escrow<phantom DepositCoinType: store, phantom PaymentCoinType: store> has key, store {
         id: object::UID,
-        deposit: Balance<CoinType>,
+        deposit: Balance<DepositCoinType>,
         requested_amount: u64,
-        receive: Balance<CoinType>,
+        receive: Balance<PaymentCoinType>,
         creator: address,
     }
 
-    /// Seller kunci koin miliknya, tentukan jumlah yang diminta dari buyer.
-    public entry fun create_escrow<CoinType: store>(
-        deposit_coin: Coin<CoinType>,
+    /// Seller kunci koin miliknya (DepositCoinType), tentukan jumlah PaymentCoinType yang diminta dari buyer.
+    /// Contoh: Seller deposit TBTC, minta zSUI sebagai pembayaran.
+    public entry fun create_escrow<DepositCoinType: store, PaymentCoinType: store>(
+        deposit_coin: Coin<DepositCoinType>,
         request_amount: u64,
         ctx: &mut TxContext,
     ) {
-        let escrow = Escrow {
+        let escrow = Escrow<DepositCoinType, PaymentCoinType> {
             id: object::new(ctx),
             deposit: coin::into_balance(deposit_coin),
             requested_amount: request_amount,
-            receive: balance::zero<CoinType>(),
+            receive: balance::zero<PaymentCoinType>(),
             creator: ctx.sender(),
         };
 
         transfer::public_transfer(escrow, ctx.sender());
     }
 
-    /// Buyer kirim koin sesuai request, langsung menerima deposit seller.
-    public entry fun accept_escrow<CoinType: store>(
-        escrow: &mut Escrow<CoinType>,
-        payment: Coin<CoinType>,
+    /// Buyer kirim koin PaymentCoinType sesuai request, langsung menerima deposit DepositCoinType dari seller.
+    /// Contoh: Buyer bayar zSUI, terima TBTC dari escrow.
+    public entry fun accept_escrow<DepositCoinType: store, PaymentCoinType: store>(
+        escrow: &mut Escrow<DepositCoinType, PaymentCoinType>,
+        payment: Coin<PaymentCoinType>,
         ctx: &mut TxContext,
     ) {
         assert!(coin::value(&payment) == escrow.requested_amount, 0);
@@ -97,9 +175,9 @@ module escrow::simple_escrow {
         transfer::public_transfer(deposit_coin, ctx.sender());
     }
 
-    /// Seller tarik pembayaran yang sudah diterima dari buyer.
-    public entry fun complete_escrow<CoinType: store>(
-        escrow: &mut Escrow<CoinType>,
+    /// Seller tarik pembayaran PaymentCoinType yang sudah diterima dari buyer.
+    public entry fun complete_escrow<DepositCoinType: store, PaymentCoinType: store>(
+        escrow: &mut Escrow<DepositCoinType, PaymentCoinType>,
         ctx: &mut TxContext,
     ) {
         assert!(ctx.sender() == escrow.creator, 2);
@@ -109,8 +187,9 @@ module escrow::simple_escrow {
     }
 
     /// Seller batalkan escrow, deposit dikembalikan ke seller.
-    public entry fun cancel_escrow<CoinType: store>(
-        escrow: Escrow<CoinType>,
+    /// Hanya bisa dibatalkan jika belum ada pembayaran dari buyer.
+    public entry fun cancel_escrow<DepositCoinType: store, PaymentCoinType: store>(
+        escrow: Escrow<DepositCoinType, PaymentCoinType>,
         ctx: &mut TxContext,
     ) {
         assert!(ctx.sender() == escrow.creator, 3);
@@ -137,28 +216,48 @@ module escrow::simple_escrow {
 }
 ```
 
-### 2.1. Penjelasan Struct `Escrow`
+#### Penjelasan Struct `Escrow`
 
-- `id`: tanda unik untuk object escrow
-- `deposit`: saldo penjual yang disimpan aman
-- `requested_amount`: angka yang harus dibayar pembeli
-- `receive`: saldo pembayaran yang sudah masuk
-- `creator`: alamat penjual sebagai pemilik escrow
+Escrow ini mendukung **swap antara dua tipe koin berbeda**, tidak hanya koin yang sama. Ini membuat escrow lebih fleksibel untuk berbagai use case.
 
-`Balance<T>` adalah kantong internal untuk menyimpan koin tipe tertentu. Kita memakai `Balance` karena bisa diletakkan di dalam object. `Coin<T>` adalah objek yang siap ditransfer. Kita ubah `Coin` menjadi `Balance` saat masuk ke escrow dan mengubahnya kembali saat keluar.
+- **`id`**: Tanda unik untuk object escrow (UID)
+- **`deposit`**: Saldo penjual (tipe `DepositCoinType`) yang disimpan aman di escrow
+- **`requested_amount`**: Jumlah `PaymentCoinType` yang harus dibayar pembeli
+- **`receive`**: Saldo pembayaran (tipe `PaymentCoinType`) yang sudah masuk dari pembeli
+- **`creator`**: Alamat penjual sebagai pemilik escrow
 
-### 2.2. Penjelasan Fungsi
+**Catatan Penting**: 
+- `Balance<T>` adalah kantong internal untuk menyimpan koin tipe tertentu. Kita memakai `Balance` karena bisa diletakkan di dalam object.
+- `Coin<T>` adalah objek yang siap ditransfer. Kita ubah `Coin` menjadi `Balance` saat masuk ke escrow dan mengubahnya kembali saat keluar.
+- Menggunakan **phantom type parameters** (`phantom`) karena tipe coin hanya digunakan untuk type checking, tidak disimpan sebagai data.
 
-- `create_escrow`: penjual memasukkan koin dan menentukan angka. Escrow langsung kembali ke alamat penjual supaya bisa diteruskan ke pembeli.
-- `accept_escrow`: pembeli mengirim koin dengan nilai tepat. Deposit penjual langsung dikirim ke pembeli, sementara pembayaran pembeli disimpan di `receive`.
-- `complete_escrow`: penjual menarik pembayaran yang tersimpan di field `receive`. Hanya pembuat escrow yang boleh memanggil fungsi ini.
-- `cancel_escrow`: penjual menarik deposit dan menghapus object escrow selama tidak ada pembayaran tersisa. Hanya pembuat escrow yang diizinkan.
+#### Penjelasan Fungsi
 
----
+1. **`create_escrow<DepositCoinType, PaymentCoinType>`**: 
+   - Penjual memasukkan koin `DepositCoinType` sebagai deposit
+   - Menentukan jumlah `PaymentCoinType` yang diminta dari pembeli
+   - Escrow object langsung dikembalikan ke alamat penjual supaya bisa diteruskan ke pembeli
+   - **Contoh**: Seller deposit TBTC, minta 100 zSUI sebagai pembayaran
 
-## 3. Kode Pendukung `mock_coin`
+2. **`accept_escrow<DepositCoinType, PaymentCoinType>`**: 
+   - Pembeli mengirim koin `PaymentCoinType` dengan nilai yang tepat sesuai `requested_amount`
+   - Deposit `DepositCoinType` penjual langsung dikirim ke pembeli
+   - Pembayaran `PaymentCoinType` pembeli disimpan di field `receive`
+   - **Contoh**: Buyer bayar 100 zSUI, langsung terima TBTC dari escrow
 
-Kita butuh token latihan supaya tidak memakai SUI asli. Modul `mock_coin` membuat token fiktif bernama MOCK. Kode di bawah juga tidak perlu diubah.
+3. **`complete_escrow<DepositCoinType, PaymentCoinType>`**: 
+   - Penjual menarik pembayaran `PaymentCoinType` yang tersimpan di field `receive`
+   - Hanya pembuat escrow (creator) yang boleh memanggil fungsi ini
+   - **Contoh**: Seller tarik 100 zSUI yang sudah dibayar buyer
+
+4. **`cancel_escrow<DepositCoinType, PaymentCoinType>`**: 
+   - Penjual menarik deposit `DepositCoinType` dan menghapus object escrow
+   - Hanya bisa dilakukan jika tidak ada pembayaran yang tertahan
+   - Hanya pembuat escrow yang diizinkan
+
+### 3.2. Modul `mock_coin`
+
+Buat file `sources/mock_coin.move` dan salin kode berikut:
 
 ```rust
 module escrow::mock_coin {
@@ -199,81 +298,112 @@ module escrow::mock_coin {
 }
 ```
 
-### 3.1. Penjelasan Singkat
+#### Penjelasan
 
-- `MOCK_COIN`: saksi satu kali untuk membuat tipe koin baru.
-- `init`: otomatis dijalankan saat paket dipublish untuk menyiapkan metadata dan kapabilitas mint.
-- `mint_mock_coin`: mencetak token latihan sesuai jumlah yang diminta, lalu mengirim ke alamat pemanggil.
+- **`MOCK_COIN`**: One-time witness untuk membuat tipe koin baru
+- **`init`**: Otomatis dijalankan saat paket dipublish untuk menyiapkan metadata dan kapabilitas mint
+- **`mint_mock_coin`**: Mencetak token latihan sesuai jumlah yang diminta, lalu mengirim ke alamat pemanggil
 
-Setelah publish, simpan `TreasuryCap<MOCK_COIN>` supaya bisa mencetak koin kapan saja.
+**Catatan**: Setelah publish, simpan `TreasuryCap<MOCK_COIN>` supaya bisa mencetak koin kapan saja.
 
----
+### 3.3. One-Time Witness (OTW) - Penjelasan Lengkap
 
-## 4. Cerita Singkat Escrow
+#### Apa itu One-Time Witness?
 
-Bayangkan kamu menjual barang ke teman jauh. Kamu ingin pembeli membayar tepat waktu, pembeli ingin barang aman. Escrow menyediakan perantara netral:
+**One-Time Witness (OTW)** adalah pattern keamanan di Sui Move yang memastikan suatu struct hanya bisa dibuat **sekali** saat package dipublish. Ini sangat penting untuk membuat tipe koin baru karena mencegah duplikasi atau pembuatan koin palsu.
 
-1. penjual menaruh deposit ke kotak aman
-2. pembeli menyerahkan pembayaran ke kotak aman
-3. setelah semuanya cocok, pembeli menerima deposit dan penjual mengambil pembayaran
-4. jika ada masalah, penjual bisa membatalkan dan menarik deposit
+#### Karakteristik OTW
 
-Di blockchain, alur itu dijalankan otomatis oleh smart contract sehingga tidak ada campur tangan manusia.
+1. **Struct dengan `drop` ability**: OTW harus memiliki ability `drop` saja
+2. **Nama sama dengan module**: Nama struct harus sama persis dengan nama module (case-sensitive)
+3. **Hanya dibuat saat publish**: Compiler Sui secara otomatis membuat instance OTW saat package pertama kali dipublish
+4. **Tidak bisa dibuat manual**: Tidak ada cara untuk membuat instance OTW secara manual setelah publish
 
----
+#### Contoh di Kode Kita
 
-## 5. Alur Escrow di Sui
-
-1. penjual membuat escrow, deposit disimpan di object escrow  
-2. pembeli menerima escrow dan mengirim pembayaran sesuai angka yang diminta  
-3. penjual menarik pembayaran kapan saja setelah pembeli membayar  
-4. penjual dapat membatalkan escrow selama belum ada pembayaran yang tertahan
-
----
-
-## 6. Membagi Coin untuk Testing
-
-Satu object coin tidak bisa dipakai sekaligus sebagai gas dan argumen. Gunakan `sui client pay-sui` untuk memecah coin menjadi beberapa bagian yang lebih kecil.
-
-```bash
-sui client pay-sui ^
-  --input-coins <COIN_ID_BESAR> ^
-  --recipients $(sui client active-address) ^
-  --amounts 10000000 ^
-  --gas-budget 5000000
+```rust
+module escrow::mock_coin {
+    // Nama struct MOCK_COIN sama dengan nama module (mock_coin dalam uppercase)
+    public struct MOCK_COIN has drop {}
+    
+    fun init(witness: MOCK_COIN, ctx: &mut TxContext) {
+        // witness adalah instance MOCK_COIN yang dibuat otomatis saat publish
+        let (builder, cap) = coin_registry::new_currency_with_otw(
+            witness,  // OTW digunakan di sini
+            // ... parameter lainnya
+        );
+    }
+}
 ```
 
-Penjelasan cepat:
+#### Mengapa OTW Penting?
 
-- `COIN_ID_BESAR`: coin utama yang nilainya besar
-- `recipients`: alamat tujuan, gunakan alamat aktif sendiri agar coin baru tetap di dompet
-- `amounts`: nilai coin baru dalam MIST (1 SUI = 1.000.000.000 MIST)
-- `gas-budget`: biaya transaksi
+1. **Keamanan**: Mencegah pembuatan koin duplikat atau palsu
+2. **Unik**: Setiap package hanya bisa membuat satu tipe koin dengan nama yang sama
+3. **Trustless**: Tidak perlu mempercayai pihak ketiga untuk membuat koin
+4. **Immutable**: Setelah dibuat, tipe koin tidak bisa diubah
 
-Jalankan perintah dua kali untuk menyiapkan coin deposit dan coin pembayaran.
+#### Alur Kerja OTW
 
-Tips tambahan:
+1. **Saat publish package**:
+   ```
+   sui client publish
+   ```
+   - Compiler Sui melihat struct `MOCK_COIN` dengan `drop` ability
+   - Compiler memeriksa apakah nama struct sama dengan nama module
+   - Jika ya, compiler membuat instance `MOCK_COIN` secara otomatis
+   - Instance ini dikirim ke fungsi `init` sebagai parameter
 
-- cek daftar coin dengan `sui client gas`
-- catat setiap `ObjectID` karena kita akan memakainya sebagai argumen perintah
+2. **Fungsi `init` dipanggil**:
+   - Menerima instance `MOCK_COIN` sebagai `witness`
+   - Menggunakan `witness` untuk membuat currency baru via `coin_registry::new_currency_with_otw`
+   - Setelah digunakan, `witness` di-drop (tidak bisa digunakan lagi)
+
+3. **Setelah publish**:
+   - Tidak ada cara untuk membuat instance `MOCK_COIN` lagi
+   - Tipe koin `MOCK_COIN` sudah terdaftar di sistem
+   - Hanya bisa mint coin menggunakan `TreasuryCap`
+
+#### Tips Penting
+
+- ✅ **Nama struct harus sama persis** dengan nama module (case-sensitive)
+- ✅ **Harus memiliki `drop` ability** saja
+- ✅ **Hanya bisa digunakan sekali** di fungsi `init`
+- ❌ **Tidak bisa membuat instance manual** setelah publish
+- ❌ **Tidak bisa membuat koin dengan nama yang sama** di package lain
+
+#### Contoh Lain OTW
+
+```rust
+module my_package::my_token {
+    // ✅ Benar: nama struct sama dengan module (MY_TOKEN = my_token uppercase)
+    public struct MY_TOKEN has drop {}
+    
+    fun init(witness: MY_TOKEN, ctx: &mut TxContext) {
+        // gunakan witness untuk membuat currency
+    }
+}
+```
 
 ---
 
-## 7. Publish Paket dan Simpan ID Penting
+## 4. Publish dan Testing
 
-1. jalankan `sui client publish --gas-budget 200000000`
-2. catat `PackageID` dari hasil publish
-3. catat juga `TreasuryCap<MOCK_COIN>` untuk proses mint
+### 4.1. Publish Paket
 
-Setelah publish, kita siap melakukan flow lengkap escrow.
+Jalankan perintah publish:
 
----
+```bash
+sui client publish --gas-budget 200000000
+```
 
-## 8. Uji Alur Escrow
+**Penting**: Catat ID-ID berikut dari hasil publish:
+- **`PackageID`**: ID paket yang akan digunakan untuk memanggil fungsi
+- **`TreasuryCap<MOCK_COIN>`**: ID untuk proses mint coin
 
-Gunakan angka contoh `10000000` (0,01 token dengan 9 desimal) agar mudah. Ganti ID sesuai milikmu.
+### 4.2. Mint MOCK Coin
 
-### 8.1. Mint MOCK Coin
+Mint coin untuk testing. Gunakan angka contoh `100000000` (0.1 token dengan 9 desimal):
 
 ```bash
 sui client call ^
@@ -284,25 +414,71 @@ sui client call ^
   --gas-budget 100000000
 ```
 
-Setelah mint, gunakan `sui client gas` untuk melihat coin baru. Pecah coin agar memiliki deposit dan payment dengan nilai sama.
+**Tips**: 
+- Cek coin yang tersedia dengan `sui client gas`
+- Catat `ObjectID` dari coin yang baru dibuat
 
-### 8.2. Create Escrow oleh Penjual
+### 4.3. Membagi Coin untuk Testing
 
+Satu object coin tidak bisa dipakai sekaligus sebagai gas dan argumen. Gunakan `sui client pay-sui` untuk memecah coin:
+
+```bash
+sui client pay-sui ^
+  --input-coins <COIN_ID_BESAR> ^
+  --recipients $(sui client active-address) ^
+  --amounts 10000000 ^
+  --gas-budget 5000000
+```
+
+**Penjelasan**:
+- `COIN_ID_BESAR`: Coin utama yang nilainya besar
+- `recipients`: Alamat tujuan (gunakan alamat aktif sendiri)
+- `amounts`: Nilai coin baru dalam MIST (1 SUI = 1.000.000.000 MIST)
+- `gas-budget`: Biaya transaksi
+
+Jalankan perintah ini dua kali untuk menyiapkan coin deposit dan coin pembayaran.
+
+---
+
+## 5. Testing Alur Escrow
+
+Gunakan angka contoh `10000000` (0.01 token dengan 9 desimal). Ganti semua `<ID>` dengan ID yang sesuai milikmu.
+
+### 5.1. Create Escrow (Penjual)
+
+Penjual membuat escrow dengan deposit. Karena escrow sekarang mendukung dua tipe coin berbeda, kita perlu menentukan kedua tipe coin.
+
+**Contoh 1: Swap MOCK_COIN dengan MOCK_COIN (sama)**
 ```bash
 sui client call ^
   --package <PACKAGE_ID> ^
   --module simple_escrow ^
   --function create_escrow ^
-  --type-args <COIN_TYPE> ^
+  --type-args <PACKAGE_ID>::mock_coin::MOCK_COIN <PACKAGE_ID>::mock_coin::MOCK_COIN ^
   --args <DEPOSIT_COIN_ID> 10000000 ^
   --gas-budget 100000000
 ```
 
-`COIN_TYPE` bisa berupa `0x...::mock_coin::MOCK_COIN`. Output transaksi berisi `ESCROW_ID`. Simpan ID ini.
+**Contoh 2: Swap MOCK_COIN dengan SUI (berbeda)**
+```bash
+sui client call ^
+  --package <PACKAGE_ID> ^
+  --module simple_escrow ^
+  --function create_escrow ^
+  --type-args <PACKAGE_ID>::mock_coin::MOCK_COIN 0x2::sui::SUI ^
+  --args <DEPOSIT_COIN_ID> 10000000 ^
+  --gas-budget 100000000
+```
 
-### 8.3. Transfer Escrow ke Pembeli (Jika Perlu)
+**Catatan**:
+- **Type-args pertama**: `DepositCoinType` (tipe coin yang di-deposit penjual)
+- **Type-args kedua**: `PaymentCoinType` (tipe coin yang harus dibayar pembeli)
+- Format: `<PACKAGE_ID>::mock_coin::MOCK_COIN` atau `0x2::sui::SUI`
+- Output transaksi berisi `ESCROW_ID` - **simpan ID ini!**
 
-Jika akun pembeli berbeda, lakukan:
+### 5.2. Transfer Escrow ke Pembeli (Opsional)
+
+Jika menggunakan akun pembeli berbeda:
 
 ```bash
 sui client transfer-object ^
@@ -311,82 +487,147 @@ sui client transfer-object ^
   --gas-budget 50000000
 ```
 
-Jika kamu memakai satu alamat untuk latihan, langkah ini boleh dilewati.
+Jika menggunakan satu alamat untuk latihan, langkah ini bisa dilewati.
 
-### 8.4. Accept Escrow oleh Pembeli
+### 5.3. Accept Escrow (Pembeli)
+
+Pembeli mengirim pembayaran sesuai jumlah yang diminta. Pastikan menggunakan type-args yang sama dengan saat create escrow.
 
 ```bash
 sui client call ^
   --package <PACKAGE_ID> ^
   --module simple_escrow ^
   --function accept_escrow ^
-  --type-args <COIN_TYPE> ^
+  --type-args <DEPOSIT_COIN_TYPE> <PAYMENT_COIN_TYPE> ^
   --args <ESCROW_ID> <PAYMENT_COIN_ID> ^
   --gas-budget 100000000
 ```
 
-- pembayaran harus sama persis dengan `requested_amount`
-- setelah transaksi, pembeli langsung menerima coin deposit
+**Penting**:
+- **Type-args harus sama** dengan saat create escrow (DepositCoinType, PaymentCoinType)
+- Pembayaran harus sama persis dengan `requested_amount` (10000000)
+- Setelah transaksi, pembeli langsung menerima coin deposit (DepositCoinType)
+- Pembayaran pembeli (PaymentCoinType) tersimpan di escrow untuk diambil penjual
 
-### 8.5. Complete Escrow oleh Penjual
+### 5.4. Complete Escrow (Penjual)
 
-Pastikan object escrow kembali ke penjual (transfer lagi jika diperlukan). Lalu jalankan:
+Penjual menarik pembayaran yang sudah diterima. Pastikan menggunakan type-args yang sama.
 
 ```bash
 sui client call ^
   --package <PACKAGE_ID> ^
   --module simple_escrow ^
   --function complete_escrow ^
-  --type-args <COIN_TYPE> ^
+  --type-args <DEPOSIT_COIN_TYPE> <PAYMENT_COIN_TYPE> ^
   --args <ESCROW_ID> ^
   --gas-budget 100000000
 ```
 
-Penjual sekarang memegang pembayaran dari pembeli. Flow utama selesai.
+**Catatan**: 
+- **Type-args harus sama** dengan saat create escrow
+- Pastikan object escrow kembali ke penjual (transfer lagi jika diperlukan)
+- Penjual akan menerima pembayaran `PaymentCoinType` dari buyer
 
----
+Setelah ini, penjual memegang pembayaran dari pembeli. Flow utama selesai!
 
-## 9. Membatalkan Escrow
+### 5.5. Cancel Escrow (Opsional)
 
-Jika penjual ingin berhenti sebelum pembeli bayar:
+Jika penjual ingin membatalkan sebelum pembeli bayar:
 
 ```bash
 sui client call ^
   --package <PACKAGE_ID> ^
   --module simple_escrow ^
   --function cancel_escrow ^
-  --type-args <COIN_TYPE> ^
+  --type-args <DEPOSIT_COIN_TYPE> <PAYMENT_COIN_TYPE> ^
   --args <ESCROW_ID> ^
   --gas-budget 100000000
 ```
 
-Escrow dihapus, deposit kembali ke penjual. Fungsi ini hanya bisa dipanggil oleh pembuat escrow.
+**Catatan**:
+- **Type-args harus sama** dengan saat create escrow
+- Escrow akan dihapus dan deposit `DepositCoinType` kembali ke penjual
+- Hanya pembuat escrow yang bisa memanggil fungsi ini
+- Hanya bisa dibatalkan jika belum ada pembayaran dari buyer
 
 ---
 
-## 10. Pemeriksaan dan Debug
+## 6. Pemeriksaan dan Debug
 
-- `sui client object <ESCROW_ID>` menampilkan isi object escrow (deposit, receive, owner)
-- `sui client objects` menunjukkan semua object milik alamat aktif
-- `sui client transaction <DIGEST>` membantu membaca detail transaksi terakhir
+### 6.1. Perintah Pemeriksaan
+
+- **Cek object escrow**:
+  ```bash
+  sui client object <ESCROW_ID>
+  ```
+  Menampilkan isi object escrow (deposit, receive, owner)
+
+- **Cek semua object**:
+  ```bash
+  sui client objects
+  ```
+  Menampilkan semua object milik alamat aktif
+
+- **Cek detail transaksi**:
+  ```bash
+  sui client transaction <DIGEST>
+  ```
+  Membantu membaca detail transaksi terakhir
+
+- **Cek coin yang tersedia**:
+  ```bash
+  sui client gas
+  ```
+  Menampilkan daftar coin untuk gas
+
+### 6.2. Troubleshooting
+
+**Insufficient gas**
+- Isi faucet lagi atau kurangi `gas-budget`
+
+**Object not found**
+- Cek kembali penulisan `ObjectID`
+- Object mungkin sudah digunakan lalu terhapus
+
+**Assertion failure**
+- Pastikan nilai pembayaran sama dengan `requested_amount`
+- Pastikan pemanggil fungsi sesuai aturan (hanya creator yang boleh complete atau cancel)
+- Error code: `0` = payment mismatch, `2` = bukan creator (complete), `3` = bukan creator (cancel)
+
+**Coin value mismatch**
+- Gunakan `sui client object <COIN_ID>` untuk mengecek nilai coin sebelum dipakai
+
+**Type mismatch**
+- Pastikan menggunakan **dua type-args** yang benar: `<DEPOSIT_COIN_TYPE> <PAYMENT_COIN_TYPE>`
+- Format: `<PACKAGE_ID>::mock_coin::MOCK_COIN` atau `0x2::sui::SUI`
+- Type-args harus konsisten di semua fungsi (create, accept, complete, cancel)
 
 ---
 
-## 11. Troubleshooting
+## 7. Ringkasan
 
-- **Insufficient gas**: isi faucet lagi atau kurangi `gas-budget`
-- **Object not found**: cek kembali penulisan `ObjectID`, mungkin sudah digunakan lalu terhapus
-- **Assertion failure**: pastikan nilai pembayaran sama dengan `requested_amount` dan pemanggil fungsi sesuai aturan (misal hanya creator yang boleh complete atau cancel)
-- **Coin value mismatch**: gunakan `sui client object <COIN_ID>` untuk mengecek nilai coin sebelum dipakai
+### 7.1. Konsep Utama
 
----
+- **Escrow** menyimpan deposit penjual sampai pembeli membayar sesuai jumlah yang disepakati
+- **Mendukung swap dua tipe coin berbeda**: `DepositCoinType` dan `PaymentCoinType`
+- **`Balance<T>`** dipakai untuk menyimpan koin di dalam object
+- **`Coin<T>`** dipakai saat transfer keluar
+- **`simple_escrow`** mendukung empat aksi utama: buat, terima, selesaikan, batalkan
+- **One-Time Witness (OTW)** memastikan tipe koin hanya dibuat sekali saat publish
 
-## 12. Ringkasan
+### 7.2. Best Practices
 
-- Escrow menyimpan deposit penjual sampai pembeli membayar sesuai angka yang disepakati
-- `Balance` dipakai untuk menyimpan koin di dalam object, `Coin` dipakai saat transfer keluar
-- `simple_escrow` mendukung empat aksi utama: buat, terima, selesaikan, batalkan
-- `mock_coin` memberi token latihan agar kita tidak memakai dana sebenarnya
-- Catat semua ID penting (package, treasury cap, coin, escrow) supaya setiap langkah mudah diulang
+- **Catat semua ID penting**: Package ID, Treasury Cap, Coin IDs, Escrow ID
+- **Gunakan mock coin** untuk testing agar tidak memakai dana sebenarnya
+- **Pecah coin** sebelum testing untuk memisahkan gas dan argumen
+- **Verifikasi object** dengan `sui client object` sebelum menggunakan
 
-Selamat berlatih. Setelah memahami contoh ini, kamu bisa menambahkan status, batas waktu, atau event untuk mencatat setiap aksi escrow.
+### 7.3. Langkah Selanjutnya
+
+Setelah memahami contoh ini, kamu bisa:
+- Menambahkan status escrow (pending, completed, cancelled)
+- Menambahkan batas waktu (deadline)
+- Menambahkan event untuk mencatat setiap aksi escrow
+- Menambahkan fee untuk escrow service
+
+Selamat berlatih! 🚀
