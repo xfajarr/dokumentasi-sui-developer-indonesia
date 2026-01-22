@@ -2,34 +2,23 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
-
 const config: Config = {
   title: 'Dokumentasi Sui Development (Indonesia)',
   tagline: 'Menguasai Pengembangan Blockchain Sui',
   favicon: 'img/Sui_Symbol_Sea.png',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
+    v4: true,
   },
 
-  // Set the production url of your site here
   url: 'https://sui-docs-id.vercel.app',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'facebook',
+  projectName: 'docusaurus',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'id',
     locales: ['id', 'en'],
@@ -41,10 +30,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/xfajarr',
+          editUrl: 'https://github.com/xfajarr',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -54,10 +40,11 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
+      defaultMode: 'light',
+      disableSwitch: false,
     },
     docs: {
       sidebar: {
@@ -69,27 +56,63 @@ const config: Config = {
       title: '',
       logo: {
         alt: 'Logo Sui',
-        src: 'img/Sui_Logo_Ocean.svg',
-        srcDark: 'img/Sui_Logo_White.svg',
+        src: '/img/Sui_Logo_Ocean.svg',
+        srcDark: '/img/Sui_Logo_White.svg',
+        width: 140,
+        height: 32,
       },
       items: [
         {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Sui Developer Workshop',
+          label: 'Dokumentasi',
+        },
+        {
+          to: 'https://github.com/xfajarr/suidev-workshop-docs',
+          label: 'GitHub',
+          position: 'right',
         },
       ],
     },
     footer: {
-      style: 'dark',
+      style: 'light',
       links: [
         {
-          title: 'Sui Developer Workshop',
+          title: 'Dokumentasi',
           items: [
             {
-              label: 'Panduan',
+              label: 'Pengenalan',
               to: '/docs/intro',
+            },
+            {
+              label: 'Setup Lingkungan',
+              to: '/docs/setup/01-setup-lingkungan-development',
+            },
+            {
+              label: 'Setup Wallet',
+              to: '/docs/setup/02-setup-wallet-dan-faucet',
+            },
+          ],
+        },
+        {
+          title: 'Materi Workshop',
+          items: [
+            {
+              label: 'Blockchain Fundamentals',
+              to: '/docs/day1/00-pengenalan-blockchain-smartcontract',
+            },
+            {
+              label: 'Pengenalan Sui',
+              to: '/docs/day1/01-pengenalan-sui-blockchain',
+            },
+            {
+              label: 'Move Syntax Dasar',
+              to: '/docs/day2/01-move-sintaks-dasar',
+            },
+            {
+              label: 'Escrow Contract',
+              to: '/docs/day2/05-praktik-escrow-contract',
             },
           ],
         },
@@ -101,8 +124,25 @@ const config: Config = {
               href: 'https://t.me/moveindonesia',
             },
             {
-              label: 'X',
+              label: 'Twitter/X',
               href: 'https://x.com/SuiCommunity_ID',
+            },
+            {
+              label: 'GitHub',
+              href: 'https://github.com/xfajarr',
+            },
+          ],
+        },
+        {
+          title: 'Resources',
+          items: [
+            {
+              label: 'Sui Official Docs',
+              href: 'https://docs.sui.io',
+            },
+            {
+              label: 'Move Language',
+              href: 'https://move-language.github.io/move',
             },
           ],
         },
