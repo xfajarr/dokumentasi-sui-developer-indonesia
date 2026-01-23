@@ -76,6 +76,7 @@ a:hover {
   --sui-shadow-md: 0 4px 6px -1px rgba(77, 162, 255, 0.1), 0 2px 4px -1px rgba(77, 162, 255, 0.06);
   --sui-shadow-lg: 0 10px 15px -3px rgba(77, 162, 255, 0.1), 0 4px 6px -2px rgba(77, 162, 255, 0.05);
   --sui-shadow-xl: 0 20px 25px -5px rgba(77, 162, 255, 0.1), 0 10px 10px -5px rgba(77, 162, 255, 0.04);
+  --ifm-navbar-height: 60px;
 }
 
 [data-theme='dark'] {
@@ -99,7 +100,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 2rem;
-  height: 60px;
+  height: var(--ifm-navbar-height);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -648,9 +649,21 @@ html:not([data-theme='dark']) .footer__copyright,
 }
 
 @media (max-width: 768px) {
+  :root {
+    --ifm-navbar-height: 56px;
+  }
+
   .navbar {
-    padding: 0.75rem 1rem;
-    height: 64px;
+    padding: 0.5rem 1rem;
+  }
+
+  .navbar__brand {
+    gap: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .navbar__logo {
+    height: 26px;
   }
   
   .footer {
@@ -669,6 +682,11 @@ html:not([data-theme='dark']) .footer__copyright,
   
   .footer__social {
     justify-content: center;
+  }
+
+  .navbar__toggle {
+    width: 36px;
+    height: 36px;
   }
 }
 

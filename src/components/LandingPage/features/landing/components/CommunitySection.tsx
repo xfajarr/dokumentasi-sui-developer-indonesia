@@ -15,7 +15,7 @@ const socialLinks = [
     name: "Sui Indonesia",
     description: "Bergabung dengan komunitas lokal Sui Indonesia di Telegram.",
     icon: Users,
-    href: "https://t.me/Sui_Indonesia",
+    href: "https://t.me/Sui_Blockchain_Indonesian",
     color: "hover:bg-[#229ED9]",
     textColor: "group-hover:text-white"
   },
